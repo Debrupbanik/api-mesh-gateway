@@ -1,0 +1,5 @@
+[railway]
+entrypoint = "uvicorn apimesh.main:gateway_app:gateway_app --host 0.0.0.0 --port $PORT"
+
+[deploy.startCommand]
+python = "uvicorn apimesh.main:gateway_app:gateway_app --host 0.0.0.0 --port $PORT"
