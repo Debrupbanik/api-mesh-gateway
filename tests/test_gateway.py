@@ -1,7 +1,6 @@
 """Tests for API Mesh Gateway."""
 
 import pytest
-import asyncio
 from apimesh.circuit import CircuitBreaker, CircuitBreakerConfig, CircuitState
 from apimesh.limiter import SlidingWindowRateLimiter, RateLimitConfig
 from apimesh.ai import TrafficPredictor, SmartLoadBalancer
