@@ -1,6 +1,6 @@
 """Service definitions for the API Mesh Gateway."""
 
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 from typing import Optional
 from enum import Enum
 

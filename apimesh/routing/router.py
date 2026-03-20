@@ -8,10 +8,9 @@ from fastapi.responses import JSONResponse
 
 from ..circuit import CircuitBreakerManager, CircuitBreakerOpen
 from ..cache import CacheManager
-from ..ai import TrafficPredictor
-from ..limiter import RateLimiterManager, RateLimitConfig
+from ..ai import TrafficPredictor, SmartLoadBalancer
+from ..limiter import RateLimiterManager
 from ..core import RouteConfig, ServiceConfig, LoadBalancingStrategy
-from .load_balancer import LoadBalancer
 
 import logging
 
@@ -46,7 +45,7 @@ class RequestRouter:
         self.cache_manager = cache_manager
         self.rate_limiter_manager = rate_limiter_manager
         self.traffic_predictor = traffic_predictor
-        self.load_balancer = LoadBalancer(traffic_predictor)
+        self.load_balancer = SmartLoadBalancer(traffic_predictor)
 
     def match_route(
         self, path: str
@@ -194,15 +193,3 @@ class RequestRouter:
         if forwarded:
             return forwarded.split(",")[0].strip()
         return request.client.host if request.client else "unknown"
-
-
-class LoadBalancer:
-    """Simple load balancer wrapper."""
-
-    def __init__(self, predictor):
-        self.predictor = predictor
-
-    def select_instance(self, instances: list[dict], strategy: str) -> dict:
-        if len(instances) == 1:
-            return instances[0]
-        return instances[0]

@@ -1,6 +1,5 @@
 """Main gateway application."""
 
-import asyncio
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
@@ -8,12 +7,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 
 from .config import get_settings
-from .circuit import CircuitBreakerManager, CircuitBreakerConfig
+from .circuit import CircuitBreakerManager
 from .cache import CacheManager
-from .limiter import RateLimiterManager, RateLimitConfig
+from .limiter import RateLimiterManager
 from .ai import TrafficPredictor
 from .routing import RequestRouter
-from .core import RouteConfig, ServiceConfig, GatewayConfig, LoadBalancingStrategy
+from .core import RouteConfig, ServiceConfig
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

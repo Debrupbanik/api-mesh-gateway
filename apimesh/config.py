@@ -1,7 +1,6 @@
 """Configuration management for API Mesh Gateway."""
 
 from pydantic_settings import BaseSettings
-from typing import Optional
 from functools import lru_cache
 
 

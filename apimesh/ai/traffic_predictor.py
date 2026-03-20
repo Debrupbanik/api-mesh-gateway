@@ -1,9 +1,8 @@
 """AI-powered traffic prediction and load balancing."""
 
 import numpy as np
-from typing import Optional, Callable
+from typing import Optional
 import joblib
-from datetime import datetime
 import logging
 
 logger = logging.getLogger(__name__)
