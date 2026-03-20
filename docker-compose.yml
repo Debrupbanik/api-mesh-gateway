@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  gateway:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - APIMESH_REDIS_URL=redis://redis:6379/0
+      - APIMESH_DEBUG=false
+    depends_on:
+      - redis
+    networks:
+      - apimesh
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - apimesh
+    volumes:
+      - redis_data:/data
+
+networks:
+  apimesh:
+    driver: bridge
+
+volumes:
+  redis_data:
