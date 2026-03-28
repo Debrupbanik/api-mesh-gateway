@@ -4,14 +4,17 @@ import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 
-from .config import get_settings
+from .config import get_settings, get_auth_settings
+from .config_loader import ConfigLoader
 from .circuit import CircuitBreakerManager
 from .cache import CacheManager
 from .limiter import RateLimiterManager
 from .ai import TrafficPredictor
 from .routing import RequestRouter
+from .auth import APIKeyAuth, JWTAuth, AuthSettings
 from .core import RouteConfig, ServiceConfig
 
 logging.basicConfig(level=logging.INFO)
@@ -26,35 +29,68 @@ request_duration = Histogram(
 
 gateway_app: FastAPI = None
 router: RequestRouter = None
+api_key_auth: APIKeyAuth = None
+jwt_auth: JWTAuth = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global router
+    global router, api_key_auth, jwt_auth
     settings = get_settings()
+    auth_settings = get_auth_settings()
 
     circuit_breaker_manager = CircuitBreakerManager()
     cache_manager = CacheManager()
     rate_limiter_manager = RateLimiterManager()
     traffic_predictor = TrafficPredictor(settings.ai_model_path)
 
-    services = {
-        "api": ServiceConfig(
-            name="api",
-            hosts=["localhost"],
-            port=8001,
-            path_prefix="/api/v1",
-        )
-    }
+    # Initialize authentication
+    if auth_settings.api_key_enabled:
+        from .auth.api_key import APIKeyConfig
 
-    routes = [
-        RouteConfig(
-            path_pattern="/api",
-            service_name="api",
-            methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
-            cache_ttl=60,
+        api_key_config = APIKeyConfig(
+            enabled=True,
+            header_name=auth_settings.api_key_header,
         )
-    ]
+        for key in auth_settings.api_keys:
+            api_key_config.add_key(key)
+        api_key_auth = APIKeyAuth(api_key_config)
+        logger.info("API Key authentication enabled")
+
+    if auth_settings.jwt_enabled:
+        from .auth.jwt import JWTConfig
+
+        jwt_config = JWTConfig(
+            enabled=True,
+            secret_key=auth_settings.jwt_secret,
+            algorithm=auth_settings.jwt_algorithm,
+            audience=auth_settings.jwt_audience,
+            issuer=auth_settings.jwt_issuer,
+        )
+        jwt_auth = JWTAuth(jwt_config)
+        logger.info("JWT authentication enabled")
+
+    # Load configuration from file or use defaults
+    if settings.config_file:
+        services, routes = ConfigLoader.load(settings.config_file)
+        logger.info(f"Loaded config from {settings.config_file}")
+    else:
+        services = {
+            "api": ServiceConfig(
+                name="api",
+                hosts=["localhost"],
+                port=8001,
+                path_prefix="/api/v1",
+            )
+        }
+        routes = [
+            RouteConfig(
+                path_pattern="/api",
+                service_name="api",
+                methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
+                cache_ttl=60,
+            )
+        ]
 
     router = RequestRouter(
         routes=routes,
@@ -90,6 +126,32 @@ gateway_app.add_middleware(
 )
 
 
+async def authenticate_request(request: Request, route: RouteConfig):
+    """Authenticate request using configured auth methods."""
+    global api_key_auth, jwt_auth
+
+    if not route.auth_required:
+        return None
+
+    # Try API key auth first
+    if api_key_auth:
+        result = await api_key_auth.authenticate(request)
+        if result.success:
+            return None  # Authenticated
+
+    # Try JWT auth
+    if jwt_auth:
+        result = await jwt_auth.authenticate(request)
+        if result.success:
+            return None  # Authenticated
+
+    # Return error if we get here
+    return JSONResponse(
+        status_code=401,
+        content={"error": "Unauthorized", "message": "Authentication required"},
+    )
+
+
 @gateway_app.get("/")
 async def root():
     return {"message": "API Mesh Gateway", "version": "1.0.0"}
@@ -109,9 +171,20 @@ async def metrics():
     "/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"]
 )
 async def proxy(path: str, request: Request):
+    global router
+
+    # Get matched route for auth check
     full_path = f"/{path}"
     if request.url.query:
         full_path += f"?{request.url.query}"
+
+    route, _ = router.match_route(full_path)
+
+    # Check authentication if required
+    if route:
+        auth_error = await authenticate_request(request, route)
+        if auth_error:
+            return auth_error
 
     return await router.route_request(request, full_path, request.method)
 

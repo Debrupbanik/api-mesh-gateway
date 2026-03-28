@@ -22,10 +22,11 @@ class ServiceConfig(BaseModel):
     hosts: list[str]
     port: int
     path_prefix: str = "/"
-    timeout: int = 30
+    timeout: float = 30.0
     health_check_path: str = "/health"
     health_check_interval: int = 30
     weight: int = 1
+    max_retries: int = 3
     metadata: dict = {}
 
     @property

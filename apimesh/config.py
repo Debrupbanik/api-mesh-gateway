@@ -1,7 +1,28 @@
 """Configuration management for API Mesh Gateway."""
 
+from typing import Optional, List
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+
+
+class AuthSettings(BaseSettings):
+    """Authentication settings."""
+
+    # API Key Auth
+    api_key_enabled: bool = False
+    api_key_header: str = "X-API-Key"
+    api_keys: list[str] = []
+
+    # JWT Auth
+    jwt_enabled: bool = False
+    jwt_secret: str = ""
+    jwt_algorithm: str = "HS256"
+    jwt_audience: Optional[str] = None
+    jwt_issuer: Optional[str] = None
+
+    class Config:
+        env_prefix = "APIMESH_AUTH_"
+        case_sensitive = False
 
 
 class Settings(BaseSettings):
@@ -30,6 +51,8 @@ class Settings(BaseSettings):
     prometheus_enabled: bool = True
     prometheus_port: int = 9090
 
+    config_file: Optional[str] = None
+
     class Config:
         env_prefix = "APIMESH_"
         case_sensitive = False
@@ -39,3 +62,9 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Get cached settings instance."""
     return Settings()
+
+
+@lru_cache
+def get_auth_settings() -> AuthSettings:
+    """Get cached auth settings instance."""
+    return AuthSettings()
