@@ -6,7 +6,6 @@ import jwt as pyjwt
 
 from apimesh.auth.api_key import APIKeyAuth, APIKeyConfig
 from apimesh.auth.jwt import JWTAuth, JWTConfig
-from apimesh.auth.base import AuthType
 
 
 class MockRequest:

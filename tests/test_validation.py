@@ -7,7 +7,6 @@ from typing import Optional
 from apimesh.validation import (
     RequestValidator,
     ResponseValidator,
-    ValidationMiddleware,
     validate_query_params,
     validate_path_params,
 )

@@ -1,6 +1,6 @@
 """Configuration file loader for API Mesh Gateway."""
 
-from typing import Optional, Any, List
+from typing import List
 from pathlib import Path
 import json
 import yaml

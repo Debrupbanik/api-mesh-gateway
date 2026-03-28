@@ -1,8 +1,6 @@
 """Tests for configuration loader."""
 
 import pytest
-import tempfile
-import os
 
 from apimesh.config_loader import ConfigLoader
 

@@ -1,9 +1,8 @@
 """Request/Response validation module."""
 
-from typing import Any, Callable, Optional, Type
+from typing import Any, Optional, Type
 from pydantic import BaseModel, ValidationError
 from fastapi import Request
-from fastapi.responses import JSONResponse
 import logging
 
 logger = logging.getLogger(__name__)

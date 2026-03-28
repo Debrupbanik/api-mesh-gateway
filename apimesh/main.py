@@ -14,7 +14,7 @@ from .cache import CacheManager
 from .limiter import RateLimiterManager
 from .ai import TrafficPredictor
 from .routing import RequestRouter
-from .auth import APIKeyAuth, JWTAuth, AuthSettings
+from .auth import APIKeyAuth, JWTAuth
 from .core import RouteConfig, ServiceConfig
 
 logging.basicConfig(level=logging.INFO)
